@@ -1,0 +1,409 @@
+---
+title: "Produce_Publication_Results_1_generate_data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Produce_Publication_Results_1_generate_data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, include = FALSE}
+library(pmsimstats)
+library(data.table)
+library(lme4)
+library(lmerTest)
+library(corpcor)
+library(ggplot2)
+library(MASS)
+library(svMisc)
+library(tictoc)
+library(ggpubr)
+library(gridExtra)
+```
+
+# pmsimstats package
+
+This vignette is designed to walk through the steps used to generate the results published in [___]. The steps fall into four basic steps:
+
+* Define your trial designs
+* Define the parameter spaces you want to explore 
+* Run the simulations and save the results
+* Look at the results (this is in the accompanying vignette Produce_Publication_Results_2_Look_at_data, for easy of running simulations)
+
+We will walk through each of them in order. 
+
+## Define your trial designs
+
+The first step is to define the various clinical trial designs you are interested in comparing, using the function `buildtrialdesign`. See `?buildtrialdesign` for details of input and output structures. Note that the baseline timepoint is not included. Here, we are going to build 4 clinical trial designs, each 20 weeks long. We will then merge them into a list, `trialdesigns`:
+
+```{r SetupTrialDesigns}
+
+tdNof11<-buildtrialdesign(
+  name_longform="primary N-of-1 design",
+  name_shortform="N-of-1",
+  timepoints=c(4,8,9,10,11,12,16,20),
+  timeptname=c('OL1','OL2','BD1','BD2','BD3','BD4','COd','COp'),
+  expectancies=c(1,1,.5,.5,.5,.5,.5,.5),
+  ondrug=list( 
+    # Assumes on drug entire previous interval and this measurement point
+    pathA=c(1,1,1,1,0,0,1,0),
+    pathB=c(1,1,1,1,0,0,0,1),
+    pathC=c(1,1,1,0,0,0,1,0),
+    pathD=c(1,1,1,0,0,0,0,1)
+  )
+)
+
+
+tdOL<-buildtrialdesign(
+  name_longform="open label",
+  name_shortform="OL",
+  timepoints=cumulative(rep(2.5,8)),
+  timeptname=paste("OL",1:8,sep=""),
+  expectancies=rep(1,8),
+  ondrug=list( 
+    pathA=rep(1,8)
+  )
+)
+
+tdOLBDC<-buildtrialdesign(
+  name_longform="open label+blinded discontinuation",
+  name_shortform="OL+BDC",
+  timepoints=c(4,8,12,16,17,18,19,20),
+  timeptname=c('OL1','OL2','OL3','OL4','BD1','BD2','BD3','BD4'),
+  expectancies=c(1,1,1,1,.5,.5,.5,.5),
+  ondrug=list( 
+    pathA=c(1,1,1,1,1,1,0,0),
+    pathB=c(1,1,1,1,1,0,0,0)
+  )
+)
+
+tdCO<-buildtrialdesign(
+  name_longform="traditional crossover",
+  name_shortform="CO",
+  timepoints=cumulative(rep(2.5,8)),
+  timeptname=c(paste("COa",1:4,sep=""),paste("COb",1:4,sep="")),
+  expectancies=rep(.5,8),
+  ondrug=list( 
+    # Assumes on drug entire previous interval and this measurement point
+    pathA=c(1,1,1,1,0,0,0,0),
+    pathB=c(0,0,0,0,1,1,1,1)
+  )
+)
+
+tdPGRCT<-buildtrialdesign(
+  name_longform="Parallel group RCT",
+  name_shortform="PG-RCT",
+  timepoints=cumulative(rep(2.5,8)),
+  timeptname=paste("V",1:8,sep=""),
+  expectancies=rep(.5,8),
+  ondrug=list( 
+    pathA=rep(1,8),
+    pathB=rep(0,8)
+  )
+)
+
+trialdesigns<-list(PG=tdPGRCT,OL=tdOL,OLBDC=tdOLBDC,CO=tdCO,Nof1=tdNof11)
+```
+
+## Define your parameter space
+
+There are a number of different types of relevant parameters. They are grouped here by (a) what aspect of the simulation they are related to (e.g. generating the expected trajectory of symptom change as a function of treatment exposure vs how dropout is modeled) and (b) how it's logistically easiest to parameterize them. 
+
+### Baseline and response parameters
+
+The baseline parameters are those that describe the mean and standard deviation of (1) the biomarker being used (assumed to be a continuous variable) and (2) the outcome measure (also assumed to be continuous). Here, the biomarker is systolic blood pressure 2 minutes after standing, while the continuous variable is the total score on the CAPS5, a clinician-administered assessment tool for PTSD diagnosis and symptom severity assessment. As long as they are both continuous variables, however, what they represent doesn't matter much for the purposes of the statistical simulations. 
+
+The baseline parameters are easy and reliable to extract from existing data, so for this exercise, we did so, and did not vary them. We will just load them in:
+
+```{r}
+data(extracted_bp)
+extracted_bp
+```
+
+You can see that the object defining the baseline parameters is a data table with three columns: the "cat" column, telling you what category of baseline parameter you're defining, "m" which tells you the mean, and "sd" tells you the standar deviation. The pmsimstats tools will expect there to be two categories: BL for baseline symptom severity score, and bm for the biomarker.
+
+These raw parameters are then wrapped in a structure that will track them and where they came from, in case you're varying them:
+
+```{r}
+TRblparam<-list(
+  name="TR",
+  verbaldesc="Extracted from data with blank slate assumptions",
+  param=extracted_bp
+)
+```
+
+We didn't use any alternative baseline parameters in the publication, but you can make a set just for interest's sake, and then as with the trial designs make a list that will let you cycle through them: 
+
+```{r}
+altblparam1<-list(
+  name="LowerSDs",
+  verbaldesc="Lower SD for the BL",
+  param=data.table(
+    cat=c("BL","bm"),
+    m=extracted_bp$m,
+    sd=c(10,15.36)
+  )
+)
+
+blparamsets<-list(TRblparam,altblparam1)
+```
+
+The response parameters are similar, just very slightly more complicated. Again, we will load in the ones that were based on our raw data:
+
+```{r}
+data(extracted_rp)
+extracted_rp
+```
+You can see that we have another data.table that defines parameters for 3 factors (refer to the publication for details on what these mean, just track that what's here called tv is there called TR, what's here called pb is there called ER, and what's here called br is there called BR). Each factor is defined by a max (maximum value), disp (displacement), rate, and sd (standard deviation). Refer to \link{modgompertz} for additional details on how these values are used.
+
+We'll put a wrapper around it as before:
+```{r}
+TRrespparam<-list(
+  name="TR",
+  verbaldesc="Extracted from data with blank slate assumptions",
+  param=extracted_rp
+)
+```
+
+You can create alternative response parameters one at a time, to meet your needs, similar to the above:
+
+```{r}
+# Create some alternative response parameters:
+altrespparam1<-list(
+  name="FastPbBrSlowTv",
+  verbaldesc="Faster Pb & Br, slower tv, all else same",
+  param=data.table(
+    cat=c("tv","pb","br"),
+    max=extracted_rp$max,
+    disp=extracted_rp$disp,
+    rate=c(.5,.2,.2),
+    sd=extracted_rp$sd
+  )
+)
+
+altrespparam2<-list(
+  name="LargeTVsmallPb",
+  verbaldesc="Large TV smaller Pb, all else same",
+  param=data.table(
+    cat=c("tv","pb","br"),
+    max=c(9,4,11),
+    disp=extracted_rp$disp,
+    rate=extracted_rp$rate,
+    sd=extracted_rp$sd
+  )
+)
+
+origrespparamsets<-list(TRrespparam,altrespparam1,altrespparam2)
+```
+
+Alternatively, because how the results depend on these response parameters is a particularly interesting aspect of this type of analysis, you can generate them more systematically. I did this in a rather hacky way that was just easy to think through in the moment, you can do it however you'd like:
+
+```{r}
+# 1) ridiculous way to make it a data table
+TRlongform<-as.data.table(melt(TRrespparam$param))
+TRlongform[,rp:=paste(cat,variable,sep="_")]
+TRgrid<-TRlongform$value
+TRgrid<-data.table(rbind(TRgrid,TRgrid,TRgrid,TRgrid,TRgrid))
+setnames(TRgrid,names(TRgrid),TRlongform$rp)
+
+#2) fill it out:
+maxesgrid<-data.table(
+  tv_max=c(18,3,3,8),
+  pb_max=c(3,18,3,8),
+  br_max=c(3,3,18,8)
+)
+rates<-c(.2,.35,.5)
+ratesgrid<-expand.grid(
+  tv_rate=rates,
+  pb_rate=rates,
+  br_rate=rates
+)
+
+respparamsets<-vector(mode="list",length=1+dim(maxesgrid)[1]+dim(ratesgrid)[1])
+respparamsets[[1]]<-TRrespparam
+for(irp in 1:dim(maxesgrid)[1]){
+  op<-maxesgrid[irp,]
+  newrp<-list(
+    name=paste("MXtv",op$tv_max,"pb",op$pb_max,"br",op$br_max,sep=""),
+    verbaldesc=paste("MXtv",op$tv_max,"pb",op$pb_max,"br",op$br_max,sep=""),
+    param=data.table(
+      cat=c("tv","pb","br"),
+      max=as.numeric(op),
+      disp=extracted_rp$disp,
+      rate=extracted_rp$rate,
+      sd=as.numeric(op)
+    )
+  )
+  respparamsets[[irp+1]]<-newrp
+}
+for(irp in 1:dim(ratesgrid)[1]){
+  op<-ratesgrid[irp,]
+  newrp<-list(
+    name=paste("RTtv",op$tv_max,"pb",op$pb_max,"br",op$br_max,sep=""),
+    verbaldesc=paste("RTtv",op$tv_max,"pb",op$pb_max,"br",op$br_max,sep=""),
+    param=data.table(
+      cat=c("tv","pb","br"),
+      max=extracted_rp$max,
+      disp=extracted_rp$disp,
+      rate=as.numeric(op),
+      sd=extracted_rp$sd
+    )
+  )
+  respparamsets[[irp+1+dim(maxesgrid)[1]]]<-newrp
+}
+
+# One more version, to focus further on maxes:
+TRlongform<-as.data.table(melt(TRrespparam$param))
+TRlongform[,rp:=paste(cat,variable,sep="_")]
+TRgrid<-TRlongform$value
+TRgrid<-data.table(rbind(TRgrid,TRgrid,TRgrid,TRgrid,TRgrid))
+setnames(TRgrid,names(TRgrid),TRlongform$rp)
+maxes<-c(5,8,11)
+maxesgrid<-expand.grid(
+  tv_max=maxes,
+  pb_max=maxes,
+  br_max=maxes
+)
+respparamsetsm<-vector(mode="list",length=dim(maxesgrid)[1])
+for(irp in 1:dim(maxesgrid)[1]){
+  op<-maxesgrid[irp,]
+  newrp<-list(
+    name=paste("MXtv",op$tv_max,"pb",op$pb_max,"br",op$br_max,sep=""),
+    verbaldesc=paste("MXtv",op$tv_max,"pb",op$pb_max,"br",op$br_max,sep=""),
+    param=data.table(
+      cat=c("tv","pb","br"),
+      max=as.numeric(op),
+      disp=extracted_rp$disp,
+      rate=extracted_rp$rate,
+      sd=as.numeric(op)
+    )
+  )
+  respparamsetsm[[irp]]<-newrp
+}
+```
+
+This generated `respparamsets`, where the rates were varied, and `respparamsetsm`, where the maxes were varied. 
+
+### Censoring parameters
+
+The censoring parameters are used to create versions of the simulated data where various droppout patterns are simulated. See \link{censordata} for details of how this is implemented and what the parameteres do. 
+
+The censoring parameters are much simpler than the response parameters, with only two main parameters (beta0 and beta1), and a third parameter (eb1) that controls the shape of the biased dropout curve, but doesn't have a strong effect and was not varied for the publication. The parameter combinations to test are simply combined into a single data table, along with a brief name that can remind you what they represent (and is used in plots):
+
+```{r}
+censorparams<-data.table(
+  names=c("balanced","more of flat","more of biased","high dropout"),
+  beta0=c(.05,.05 ,.05,.15),
+  beta1=c(.5,.2,.8 ,.5),
+  eb1=  c(2,  2  ,2  ,2 )
+)
+```
+### Model parameters
+
+This set of parameters includes things that it's easy / reasonable to vary as individual parameteres. Only some of them were varied in the manuscript: N, c.bm, and carryover_t1half. The others were played with, but it didn't make it in the paper. See `?generateData` for information on each of the parameters.
+
+Here we made a few different sets of the model parameteres, for different purposes. One to test the impact of these core parameters on power (`coremodelparams`), one to run an abbreviated set when testing the impact of varying the response parameters, and a third to redo this with even lower N and biomarker effect so that we could see the impact of varying the rate parameters without half the cells capping out at 1: 
+
+```{r}
+coremodelparams<-expand.grid(
+  N=c(35,70),
+  c.bm=c(0,.3,.6),
+  carryover_t1half=c(0,.1,.2),
+  c.tv=.8,c.pb=.8,c.br=.8,
+  c.cf1t=.2,c.cfct=.1
+)
+abbrevmodelparams<-expand.grid(
+  N=c(70),
+  c.bm=c(0,.6),
+  carryover_t1half=c(0),
+  c.tv=.8,c.pb=.8,c.br=.8,
+  c.cf1t=.2,c.cfct=.1
+)
+xabbrevmodelparams2<-expand.grid(
+  N=c(35),
+  c.bm=c(.3),
+  carryover_t1half=c(0),
+  c.tv=.8,c.pb=.8,c.br=.8,
+  c.cf1t=.2,c.cfct=.1
+)
+```
+
+There are also parameters used to set strictly analysis variables; these should be kept off for the size of trials modeled here. See `?lme_analysis` for more details of these.
+
+```{r}
+# Parameters on the analysis side
+analysisparams<-expand.grid(useDE=FALSE,t_random_slope=FALSE)
+```
+
+And, finally, you're ready to generate the simtulated data! Be warned that this is computationally intense for a light little laptop like I'm using - so in the vignette text, there's a flag that keeps this code from running, and the Nrep is also set low. In the publication, all parameter spaces were repeated 1,000 times.  
+
+There are only a few settings left that aren't explained above - see `?generateData` for explanations of how they work.
+
+```{r}
+# Set the number of reptitions. Was 1,000 in the publication
+Nreps<-50
+
+# Flag to keep this code from actually running for now - flip to try it
+rerun_simulations<-FALSE
+
+if(rerun_simulations){
+  # This block runs the paramater sets that explore the impact of N, biomarker effect size, 
+  # and carryover
+  simresults<-generateSimulatedResults(
+    trialdesigns=list(trialdesigns$OL,trialdesigns$OLBDC,trialdesigns$CO,trialdesigns$Nof1),
+    respparamsets=origrespparamsets[1],
+    blparamsets=blparamsets[1],
+    censorparams=censorparams,
+    modelparams=coremodelparams,
+    simparam=list(Nreps=Nreps,
+                  progressiveSave=TRUE,
+                  basesavename="2020_02_18_core1",
+                  nRep2save=5,
+                  saveunit2start=1,
+                  savedir=wdir),
+    analysisparams=analysisparams,
+    rawdataout=FALSE)
+
+  # This block tests the inmpact of varying the maximums for the response params
+  simresults<-generateSimulatedResults(
+    trialdesigns=list(trialdesigns$OL,trialdesigns$OLBDC,trialdesigns$CO,trialdesigns$Nof1),
+    respparamsets=respparamsetsm,
+    blparamsets=blparamsets[1],
+    censorparams=censorparams[1,],
+    modelparams=xabbrevmodelparams,
+    simparam=list(Nreps=Nreps,
+                  progressiveSave=TRUE,
+                  useDE=FALSE,
+                  basesavename="2020_02_18_respMaxes5",
+                  nRep2save=10,
+                  saveunit2start=1,
+                  savedir=wdir),
+    analysisparams=analysisparams,
+    rawdataout=FALSE)
+
+  # This block tests of impact of varying the rates for the response params
+  simresults<-generateSimulatedResults(
+    trialdesigns=list(trialdesigns$OL,trialdesigns$OLBDC,trialdesigns$CO,trialdesigns$Nof1),
+    respparamsets=respparamsets,
+    blparamsets=blparamsets[1],
+    censorparams=censorparams[1,],
+    modelparams=xabbrevmodelparams,
+    simparam=list(Nreps=Nreps,
+                  progressiveSave=TRUE,
+                  useDE=FALSE,
+                  basesavename="2020_02_18_respRates4",
+                  nRep2save=10,
+                  saveunit2start=1,
+                  savedir=wdir),
+    analysisparams=analysisparams,
+    rawdataout=FALSE)
+}
+```
+For how to look at the resulting data sets, see the accompanying vignette! 

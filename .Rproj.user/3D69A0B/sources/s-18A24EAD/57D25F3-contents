@@ -1,0 +1,23 @@
+# Scrach script for working through how to develop a package
+
+# Prep-------------------------
+library("devtools")
+library("roxygen2")
+library("testthat")
+library("knitr")
+
+devtools::install_github("r-lib/devtools")
+
+library(devtools)
+has_devel()
+#> '/Library/Frameworks/R.framework/Resources/bin/R' --vanilla CMD SHLIB foo.c 
+#> 
+#> clang -I/Library/Frameworks/R.framework/Resources/include -DNDEBUG 
+#>   -I/usr/local/include -I/usr/local/include/freetype2 -I/opt/X11/include
+#>   -fPIC  -Wall -mtune=core2 -g -O2  -c foo.c -o foo.o
+#> clang -dynamiclib -Wl,-headerpad_max_install_names -undefined dynamic_lookup
+#>   -single_module -multiply_defined suppress -L/usr/local/lib -o foo.so foo.o 
+#>   -F/Library/Frameworks/R.framework/.. -framework R -Wl,-framework 
+#>   -Wl,CoreFoundation
+
+# 

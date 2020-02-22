@@ -1,0 +1,28 @@
+"0","  # This block runs the paramater sets that explore the impact of N, biomarker effect size, 
+  # and carryover
+  simresults<-generateSimulatedResults(
+    trialdesigns=list(trialdesigns$OL,trialdesigns$OLBDC,trialdesigns$CO,trialdesigns$Nof1),
+    respparamsets=origrespparamsets[1],
+    blparamsets=blparamsets[1],
+    censorparams=censorparams,
+    modelparams=coremodelparams,
+    simparam=list(Nreps=Nreps,
+                  progressiveSave=TRUE,
+                  basesavename=""coreresults"",
+                  nRep2save=5,
+                  saveunit2start=1,
+                  savedir=getwd()),
+    analysisparams=analysisparams,
+    rawdataout=FALSE)
+"
+"1","Parameter set 1 of 5 in this save unit now complete (on 1 of 72 total sets): 1.03 sec elapsed
+"
+"1","Parameter set 2 of 5 in this save unit now complete (on 2 of 72 total sets): 1.17 sec elapsed
+"
+"2","Model failed to converge with max|grad| = 0.00367354 (tol = 0.002, component 1)"
+"1","Parameter set 3 of 5 in this save unit now complete (on 3 of 72 total sets): 1.17 sec elapsed
+"
+"2","
+"
+"2","
+"

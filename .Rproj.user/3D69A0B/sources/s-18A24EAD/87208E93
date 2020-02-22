@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1582406447948.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "87208E93",
+    "lastKnownWriteTime" : 1582405566,
+    "last_content_update" : 1582405566,
+    "path" : "~/GitHub/pmsimstats/R/generateData.R",
+    "project_path" : "R/generateData.R",
+    "properties" : {
+        "cursorPosition" : "53,2",
+        "scrollLine" : "41"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 9,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

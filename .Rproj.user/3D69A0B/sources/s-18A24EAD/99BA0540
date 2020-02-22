@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1582406401035.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "99BA0540",
+    "lastKnownWriteTime" : 1582407398,
+    "last_content_update" : 1582407398361,
+    "path" : "~/GitHub/pmsimstats/R/generateSimulatedResults.R",
+    "project_path" : "R/generateSimulatedResults.R",
+    "properties" : {
+        "cursorPosition" : "253,0",
+        "scrollLine" : "231"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

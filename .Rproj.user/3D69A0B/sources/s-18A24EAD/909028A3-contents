@@ -1,0 +1,269 @@
+# Script to load simualted Nof1 trial data and generate figure plots 
+
+# Setup ------------------------------------------------
+# Libraries
+library(data.table)
+library(lme4)
+library(lmerTest)
+library(corpcor)
+library(ggplot2)
+library(MASS)
+library(svMisc)
+library(tictoc)
+library(ggpubr)
+library(gridExtra)
+
+# General options still set by hand here
+wdir<-"C:\\Users\\afane\\Dropbox\\Research\\PaperDrafts\\MethodsForNof1InPsych\\Analysis\\"
+rddir<-"C:\\Users\\afane\\Dropbox\\Research\\PaperDrafts\\MethodsForNof1InPsych\\Analysis\\2019PaperFocusedAnalyses\\ToSend\\"
+sourcedir<-"C:\\Users\\afane\\Documents\\GitHub\\Nof1simstats\\"
+
+# Sourced functions:
+setwd(sourcedir)
+source("Utilities.R")
+source("dataBasedParameterSetup.R")
+source("buildtrialdesign.R")
+source("generateData.R")
+source("censordata.R")
+source("lme_analysis.R")
+source("generateSimulatedResults.R")
+source("plottingfunctions.R")
+
+
+# Make a set of publication-quality plots------------------
+
+# 1) Look at the trajrectories of each factor on each path, all pre-censoring
+setwd(wdir)
+simresults<-readRDS("LME_compbaseparam_2020_02_08v2_500rep.rds")
+data<-simresults$rawdata$precensor # this gives a list of length (total reps done)
+tinfo<-simresults$results # dim[1] of tinfo gives the parameter space that went in
+tds<-simresults$parameterselections$trialdesigns
+mergeacrossreps<-TRUE
+plots1<-vector(mode="list",length=length(simresults$parameterselections$trialdesigns))
+for(ip in 1:length(plots1)){
+  param2hold<-data.table(carryover_t1half=0,trialdesign=ip)
+  plots1[[ip]]<-plotfactortrajectories(data,tinfo,tds,param2hold,mergeacrossreps)
+}
+legend<-as_ggplot(get_legend(plots1[[1]]))
+# Add titles
+for(ip in 1:(length(plots1))){
+  plots1[[ip]]<-plots1[[ip]]+theme(legend.position="none",text=element_text(size=10))+
+#    ggtitle(simresults$parameterselections$trialdesigns[[ip]]$metadata$name_longform)
+    ggtitle(paste(c("","A","B","C","D","E","F","G")[ip],
+                  simresults$parameterselections$trialdesigns[[ip]]$metadata$name_longform,
+                  sep=". "))+
+    theme(plot.title=element_text(size=8))
+}
+# Repeat with carryover term
+plots2<-vector(mode="list",length=length(simresults$parameterselections$trialdesigns))
+for(ip in 1:length(plots2)){
+  param2hold<-data.table(carryover_t1half=.5,trialdesign=ip)
+  plots2[[ip]]<-plotfactortrajectories(data,tinfo,tds,param2hold,mergeacrossreps)
+}
+# Add titles
+for(ip in 1:(length(plots2))){
+  plots2[[ip]]<-plots2[[ip]]+theme(legend.position="none",text=element_text(size=10))+
+#    ggtitle(simresults$parameterselections$trialdesigns[[ip]]$metadata$name_longform)
+    ggtitle(paste(c("","E","F","G","H")[ip],
+                  simresults$parameterselections$trialdesigns[[ip]]$metadata$name_longform,
+                  sep=". "))+
+    theme(plot.title=element_text(size=8))
+}
+# delete the PG-RCT, if it's here
+if(length(plots1)==5) plots1<-plots1[2:length(plots1)]
+if(length(plots2)==5) plots2<-plots2[2:length(plots2)]
+
+# adjust ylab and ylab and legends
+for(ip in c(2,3,4)){
+  plots1[[ip]]<-plots1[[ip]]+ylab("")
+  plots2[[ip]]<-plots2[[ip]]+ylab("")
+}
+for(ip in c(1,2,3,4)){
+  plots1[[ip]]<-plots1[[ip]]+xlab("")
+}
+plots1[[1]]<-plots1[[1]]+ylab("NO CARRYOVER \n Improvement in symptoms")
+plots2[[1]]<-plots2[[1]]+ylab("WITH CARRYOVER \n Improvement in symptoms")
+
+lay <- rbind(c(1,1,2,2,2,3,3,3,4,4,4,NA),
+             c(5,5,6,6,6,7,7,7,8,8,8,9))
+plots<-c(plots1,plots2,list(legend))
+grid.arrange(grobs = plots, layout_matrix = lay)
+ml <- arrangeGrob(grobs = plots, layout_matrix = lay)
+setwd(sourcedir)
+ggsave("Fig3_factortrajectories.pdf",ml,width=9,height=5,units="in",dp=600)
+
+# 2) Look at power as a function of parameters
+
+# Ran our most up to date simulations in batches, need to remerge:
+setwd(wdir)
+basesavenames_basicpowersets<-c("2020_02_17_core1",
+                                "2020_02_17_core2",
+                                "2020_02_17_core3",
+                                "2020_02_17_core4",
+                                "2020_02_17_core5",
+                                "2020_02_18_core1",
+                                "2020_02_18_core2",
+                                "2020_02_18_core3",
+                                "2020_02_18_core4",
+                                "2020_02_18_core5")
+basesavenames_respparamsetsRates<-c("2020_02_19_respRates1",
+                                    "2020_02_19_respRates2",
+                                    "2020_02_19_respRates3",
+                                    "2020_02_19_respRates4",
+                                    "2020_02_19_respRates5",
+                                    "2020_02_19_respRates6",
+                                    "2020_02_19_respRates7",
+                                    "2020_02_19_respRates8",
+                                    "2020_02_19_respRates9",
+                                    "2020_02_19_respRates10")
+basesavenames_respparamsetsMaxes<-c("2020_02_18_respMaxes1",
+                                    "2020_02_18_respMaxes2",
+                                    "2020_02_18_respMaxes3",
+                                    "2020_02_18_respMaxes4",
+                                    "2020_02_18_respMaxes5")
+
+# Our core parameters
+setwd(wdir)
+simresults<-reknitsimresults(basesavenames_basicpowersets)
+param2vary<-c("trialdesign","N","c.bm","censorparamset") 
+param2hold<-data.table(blparamset=1,respparamset=1,carryover_t1half=0)
+param2nothold<-c("c.cfct","modelparamset")
+param2plot<-"power" # Options: power, mean_frac_NA, mean_beta, mean_betaSE, sd_beta...
+p1<-PlotModelingResults(simresults,param2plot,param2vary,param2hold,param2nothold)
+#setwd(sourcedir)
+#ggsave("Fig4_basicpower_nocarryover.pdf",p,width=9,height=7,units="in",dp=600)
+
+param2vary<-c("trialdesign","N","carryover_t1half","censorparamset") 
+param2hold<-data.table(blparamset=1,respparamset=1,c.bm=.6)
+param2nothold<-c("c.cfct","modelparamset")
+param2plot<-"power" # Options: power, mean_frac_NA, mean_beta, mean_betaSE, sd_beta...
+p2<-PlotModelingResults(simresults,param2plot,param2vary,param2hold,param2nothold)
+#setwd(sourcedir)
+#ggsave("Fig5_basicpower_withcarryover.pdf",p,width=9,height=7,units="in",dp=600)
+
+p1<-p1+ggtitle("A. Effect of trial design, censoring and biomarker effect on power")+
+  theme(plot.title=element_text(hjust=0))
+p2<-p2+ggtitle("B. Effect of nonzero carryover term on power")+
+  theme(plot.title=element_text(hjust=0))
+
+lay <- rbind(c(1),
+             c(2))
+plots<-list(p1,p2)
+grid.arrange(grobs = plots, layout_matrix = lay)
+ml <- arrangeGrob(grobs = plots, layout_matrix = lay)
+setwd(sourcedir)
+ggsave("Fig4_CorePowerResults.pdf",ml,width=9,height=9,units="in",dp=600)
+
+
+# Resp parameters:
+
+# A - maxes, holding rates steady...
+setwd(wdir)
+simresults<-reknitsimresults(basesavenames_respparamsetsMaxes)
+param2vary<-c("trialdesign","tv_max","pb_max","br_max") 
+param2hold<-data.table(blparamset=1,censorparamset=0,carryover_t1half=0,c.bm=.6)
+param2nothold<-c("c.cfct","modelparamset","respparamset")
+param2plot<-"power" # Options: power, mean_frac_NA, mean_beta, mean_betaSE, sd_beta...
+p1<-PlotModelingResults(simresults,param2plot,param2vary,param2hold,param2nothold)
+#setwd(sourcedir)
+#ggsave("Fig6_influenceFactorMaxes.pdf",p,width=9,height=7,units="in",dp=600)
+
+# B - rates, holding maxes steady...
+setwd(wdir)
+simresults<-reknitsimresults(basesavenames_respparamsetsRates)
+d1<-simresults
+d1$results<-d1$results[respparamset%in%(setdiff(1:length(d1$parameterselections$respparamsets),c(1:5)))]
+param2vary<-c("trialdesign","tv_rate","pb_rate","br_rate") 
+param2hold<-data.table(blparamset=1,censorparamset=1,carryover_t1half=0,c.bm=.3)
+param2nothold<-c("c.cfct","modelparamset","respparamset")
+p2<-PlotModelingResults(d1,param2plot,param2vary,param2hold,param2nothold)
+#setwd(sourcedir)
+#ggsave("Fig7_influenceFactorRates.pdf",p,width=9,height=7,units="in",dp=600)
+
+p1<-p1+ggtitle("A. Effect of response parameter maximum values on power")+
+  theme(plot.title=element_text(hjust=0))
+p2<-p2+ggtitle("B. Effect of response parameter rate values on power")+
+  theme(plot.title=element_text(hjust=0))
+#p3<-arrangeGrob(grobs=list(p2),layout_matrix = c(NA,1))
+
+lay <- rbind(c(1),
+             c(2))
+plots<-list(p1,p2)
+grid.arrange(grobs = plots, layout_matrix = lay)
+ml <- arrangeGrob(grobs = plots, layout_matrix = lay)
+setwd(sourcedir)
+ggsave("Fig5_CoreResponseparams.pdf",ml,width=9,height=9,units="in",dp=600)
+
+
+# 3) Bias and variance of beta, as a function of parameters 
+# Plan: For a single set of ops, compile all uncensored data, and extract the mean and
+# SD of the beta. Then, compare how much this changes with dropouts
+
+# 3a - variance of beta
+setwd(wdir)
+simresults<-reknitsimresults(basesavenames_basicpowersets)
+param2vary<-c("trialdesign","respparamset","carryover_t1half","censorparamset") 
+param2hold<-data.table(N=70,blparamset=1)
+param2nothold<-c("c.cfct","modelparamset")
+param2plot<-"mean_betaSE" # Options: power, mean_frac_NA, mean_beta, mean_betaSE, sd_beta...
+p<-PlotModelingResults(simresults,param2plot,param2vary,param2hold,param2nothold)
+setwd(sourcedir)
+ggsave("Fig6_mean_betaSE.pdf",p,width=9,height=7,units="in",dp=600)
+
+# 3b - bias in beta
+setwd(wdir)
+data<-reknitsimresults(basesavenames_basicpowersets)
+d1<-data$results[carryover_t1half==0][respparamset==1]#[c.bm==.6]
+d1$censorparamset<-as.factor(d1$censorparamset)
+d1$N<-as.factor(d1$N)
+
+# Change the labels on the stuff that will be faceted
+bklabels<-vector(mode="character",length=length(data$parameterselections$trialdesigns))
+for(iT in 1:length(bklabels)){
+  bklabels[iT]<-data$parameterselections$trialdesigns[[iT]]$metadata$name_shortform[[1]]
+}
+d1$trialdesign<-as.factor(d1$trialdesign)
+levels(d1$trialdesign)<-bklabels
+bklabels<-vector(mode="character",length=length(data$parameterselections$censorparams))
+for(iT in 1:length(bklabels)){
+  bklabels[iT]<-data$parameterselections$censorparams$names[[iT]]
+}
+levels(d1$censorparamset)<-c("none",bklabels)
+
+d1[,bdelta:=(beta-ETbeta)]
+d1[,tpval:=as.numeric(NA)]
+d1[,test:=as.numeric(NA)]
+for(td in unique(d1$trialdesign)){
+  for(cp in unique(d1$censorparamset)){
+    for(bm in unique(d1$c.bm)){
+      if(bm==0){
+        tout<-t.test(x=d1[trialdesign==td][censorparamset==cp][c.bm==bm]$beta,mu=0)
+      }else{
+        tout<-t.test(x=d1[trialdesign==td][censorparamset==cp][c.bm==bm]$bdelta,mu=0)
+      }
+      d1[trialdesign==td][censorparamset==cp][c.bm==bm]$tpval<-tout$p.value
+      d1[trialdesign==td][censorparamset==cp][c.bm==bm]$test<-tout$estimate
+    }
+  }
+}
+d2<-unique(d1[,.(trialdesign,censorparamset,c.bm,tpval,test)])
+d2$test<-d2$test*1000
+p1<-ggplot(data=d2[c.bm==0])+geom_point(aes(y=tpval,x=test,color=censorparamset,shape=censorparamset),size=2)+
+  scale_y_continuous(trans='log10')+  geom_vline(aes(xintercept=0))+
+  geom_hline(aes(yintercept=.05),linetype=3)+geom_hline(aes(yintercept=.0001),linetype=4)+
+  xlab("Estimated bias in model coefficient")+ylab("Signifiance (p-value)")+
+  labs(color="Censoring",shape="Censoring")+
+  facet_grid(c.bm~trialdesign)+ggtitle("A. Bias with known 0 effect size")
+p2<-ggplot(data=d2[c.bm>0])+geom_point(aes(y=tpval,x=test,color=censorparamset,shape=censorparamset),size=2)+
+  scale_y_continuous(trans='log10')+  geom_vline(aes(xintercept=0))+
+  geom_hline(aes(yintercept=.05),linetype=3)+geom_hline(aes(yintercept=.0001),linetype=4)+
+  xlab("Estimated bias in model coefficient")+ylab("Signifiance (p-value)")+
+  labs(color="Censoring",shape="Censoring")+
+  facet_grid(c.bm~trialdesign)+ggtitle("B. Bias comapered to full data set without censoring")
+plots<-list(p1,p2)
+
+lay <- rbind(1,1,1,2,2,2,2)
+#grid.arrange(grobs = plots, layout_matrix = lay)
+ml <- arrangeGrob(grobs = plots, layout_matrix = lay)
+setwd(sourcedir)
+ggsave("Fig7_Bias.pdf",ml,width=9,height=7,units="in",dp=600)
