@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1592946978061.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "9863A3E",
+    "lastKnownWriteTime" : 1592947039,
+    "last_content_update" : 1592947039696,
+    "path" : "~/GitHub/pmsimstats/R/datadocumentation.R",
+    "project_path" : "R/datadocumentation.R",
+    "properties" : {
+        "cursorPosition" : "60,7",
+        "scrollLine" : "37",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 14,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

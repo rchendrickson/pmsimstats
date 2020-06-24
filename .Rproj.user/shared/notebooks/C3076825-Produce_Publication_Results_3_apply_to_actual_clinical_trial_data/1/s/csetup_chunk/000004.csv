@@ -1,0 +1,26 @@
+"0","library(merTools)
+"
+"2","Loading required package: arm
+"
+"2","
+arm (Version 1.10-1, built: 2018-4-12)
+
+"
+"2","Working directory is C:/Users/afane/Documents/GitHub/pmsimstats/vignettes
+
+"
+"2","Registered S3 methods overwritten by 'broom.mixed':
+  method         from 
+  augment.lme    broom
+  augment.merMod broom
+  glance.lme     broom
+  glance.merMod  broom
+  glance.stanreg broom
+  tidy.brmsfit   broom
+  tidy.gamlss    broom
+  tidy.lme       broom
+  tidy.merMod    broom
+  tidy.rjags     broom
+  tidy.stanfit   broom
+  tidy.stanreg   broom
+"

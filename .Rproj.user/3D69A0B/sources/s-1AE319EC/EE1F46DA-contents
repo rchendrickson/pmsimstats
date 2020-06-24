@@ -1,0 +1,133 @@
+---
+title: "Produce_Publication_Results_3_apply_to_actual_clinical_trial_data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Produce_Publication_Results_3_apply_to_actual_clinical_trial_data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, include = FALSE}
+library(pmsimstats)
+library(data.table)
+library(lme4)
+library(lmerTest)
+library(corpcor)
+library(ggplot2)
+library(MASS)
+library(svMisc)
+library(tictoc)
+library(ggpubr)
+library(gridExtra)
+library(merTools)
+```
+
+# pmsimstats package
+
+The primary use of this package is to simulate clinical trial results and analyze these simulated results in order to select and assess the power and limitations of a future clinical trial design. However, the package can also be used to implement the actual analysis once you have completed a clinical trial. This vignette addresses this last use.
+
+## Define your trial design
+
+If you designed and selected your trial using pmsimstats, you may already have this object created; if not, see `?buildtrialdesign` for details of input and output structures. Remember that the baseline timepoint is not included. 
+
+```{r SetupTrialDesign}
+
+tdOL<-buildtrialdesign(
+  name_longform="open label",
+  name_shortform="OL",
+  timepoints=c(7,11,15),
+  timeptname=paste("T",1:3,sep=""),
+  expectancies=rep(1,3),
+  ondrug=list( 
+    pathA=rep(1,3)
+  )
+)
+
+tdPGRCT<-buildtrialdesign(
+  name_longform="Parallel group RCT",
+  name_shortform="PG-RCT",
+  timepoints=c(7,11,15),
+  timeptname=paste("T",1:3,sep=""),
+  expectancies=rep(.5,3),
+  ondrug=list( 
+    pathA=rep(1,3),
+    pathB=rep(0,3)
+  )
+)
+
+trialdesigns<-list(PG=tdPGRCT,OL=tdOL)
+```
+
+## Analysis parameters
+
+Although you aren't setting the simulation parameters, you do need to choose the analysis variables. Again, the trial sizes we are using here are too small for the first two to be reasonably set to TRUE. The third, though, we want TRUE because it tells the function to output some extra info we'll need to interpret the results. See `?lme_analysis` for more details of these.
+
+```{r}
+analysisparams<-expand.grid(useDE=FALSE,t_random_slope=FALSE,full_model_out=TRUE)
+```
+
+## Load in the clinical trial results
+
+We are loading in some preformated reults extracted from an existing data set. They need to be a data table, with names that match those used by the rest of the package:
+* *bm* is the name of the biomarker  
+* *BL* is the name for the output variable at baseline
+* *ptID* has to be numeric and sequential
+* *path* is numeric and ordered to match the paths in your trialdesign 
+* The remainder of the columns are named to match the timepoints defined in your trialdesign and contain the output variable at each of those timepoints
+
+Here, our clinical trials data is from a parallel group RCT, with path 1 representing the prazosin group and path 2 representing the placebo group:
+
+```{r}
+data(CTdata)
+CTdata
+```
+
+## Run the lme_analysis function directly on our data
+
+We'll include the code to run the analysis on the data both including all the participants in both paths and including only those on prazosin, but you'll see that the results are identical, as the analysis implementation detects that some participants are never on any active treatment at all and removes those participants from the analysis: 
+
+```{r}
+lme_analysis.outPG<-lme_analysis(trialdesigns$PG$trialpaths,CTdata,op=analysisparams)
+lme_analysis.outOL<-lme_analysis(trialdesigns$OL$trialpaths,CTdata[path==1],op=analysisparams)
+```
+
+## Use these results to predict how a new patient with a particular biomarker value is likely to respond to treatment
+
+Because these are continuous biomarkers and continues response values, we do not by default build a "classifier" that identifes responders vs non-responders - instead, we can estimate the most likely range of response for a given patient with a given biomarker value (and baseline). Here, as a demo, we'll just use the baseline and biomarker data from our actual clinical trial results, and plot expected response as a function of biomarker, but you could always create a different set of biomarker and baseline symptom values to plot the predicted response to instead:
+
+```{r}
+# Wrange the data into a convenient to look at form:
+  # The data we started with
+dt_long<-lme_analysis.outOL$datamerged
+dt_long$dataindex<-1:dim(dt_long)[1]
+  # The predicted values
+predicted<-predict(lme_analysis.outOL$fit)
+predicted_dt<-data.table(dataindex=as.numeric(names(predicted)),predicted=predicted)
+  # Merge them
+dt_long<-merge(dt_long,predicted_dt,by="dataindex")
+  # Switch to wide form
+dt_wide<-dcast(data=dt_long,ptID+bm~t,value.var=c("Sx","predicted"))
+  # Define "response" as a convenient, single index:
+dt_wide[,predicted_response:=(predicted_15-predicted_0)]
+dt_wide[,actual_response:=(Sx_15-Sx_0)]
+  # Drop those with missing endpoints, just to make it cleaner looking
+dt_wide<-dt_wide[!is.na(Sx_15)]
+
+# Plot it
+ggplot(data=dt_wide)+
+  geom_line(aes(x=bm,y=predicted_response),color="red")+
+  geom_point(aes(x=bm,y=actual_response))+
+  xlab("Standing Systolic BP at baseline")+
+  ylab("Change in total PTSD symptom intensity over 15 weeks")
+
+```
+
+
+

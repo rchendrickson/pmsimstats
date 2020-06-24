@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1582321526006.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "4066314604",
+    "id" : "68AA2FCD",
+    "lastKnownWriteTime" : 1592977216,
+    "last_content_update" : 1592977216996,
+    "path" : "~/GitHub/pmsimstats/R/scratch_WorkingScript.R",
+    "project_path" : "R/scratch_WorkingScript.R",
+    "properties" : {
+        "cursorPosition" : "124,32",
+        "scrollLine" : "107"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

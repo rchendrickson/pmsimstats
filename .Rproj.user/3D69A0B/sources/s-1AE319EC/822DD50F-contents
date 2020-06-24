@@ -1,0 +1,68 @@
+# Load data
+dataBasedParameterSetup<-function(rddir,exop){
+  setwd(rddir)
+  dt.s<-as.data.table(readRDS("FreshPullY13AllTimepoints_scoresWithCovar.rds"))
+  # s for scores
+  dt.d<-readRDS("FreshPullY13AllTimepoints_diffs.rds")
+  # d for differences - gives deltaCAPS for each time interval ("timeptDiff")
+  # timepts are: weeks 0, 7, 11, 15
+  dto<-readRDS("FreshPullY13AllTimepoints_SummaryCalcs.rds")
+  # this version goes item by item and gives the mean rating at baseline and at end of trial for eachgroup
+  # Data (produced by createDataSetForY13data_06.R)
+  
+  # Get BP and total CAPS into useable format
+  dt.s[,CAPSToti:=sum(B1,B2,B3,B4,B5,C1,C2,C3,C4,C5,C6,C7,D1,D2,D3,D4,D5),by=c("SubjID","timept")]
+  dt.s[,BP:=as.numeric(strsplit(ScrBpStan,"/")[[1]][1]),by=c("SubjID","timept")]
+  
+  # Extract a mean change in the placebo ("time_varying_PLUS_placebo_effect") and the prazosin ("total_effect_prazosin") groups for each relevant interval (1->2, 2->3, 3->4, and 1->4)
+  time_varying_PLUS_placebo_effect<-dt.d[StudyDrug=="placebo",.(m=mean(CAPSTotal,na.rm=TRUE),sd=sd(CAPSTotal,na.rm=TRUE)),by=timeptDiff]
+  total_effect_prazosin<-dt.d[StudyDrug=="prazosin",.(m=mean(CAPSTotal,na.rm=TRUE),sd=sd(CAPSTotal,na.rm=TRUE)),by=timeptDiff]
+  # merge the total effect for prazosin and placebo groups for convenience
+  tep<-merge(total_effect_prazosin,time_varying_PLUS_placebo_effect[,.(timeptDiff,mpb=m,sdpb=sd)],by="timeptDiff")
+  
+  # Extract mean/SD for BL and biomarker (bm) parameters
+  sample.BL<-dt.s[timept=="1"][!is.na(BP)][!is.na(CAPSToti)]
+  bl<-data.table(m=mean(sample.BL$CAPSToti),sd=sd(sample.BL$CAPSToti))
+  bm<-data.table(m=mean(sample.BL$BP),sd=sd(sample.BL$BP))
+  
+  # come upwith an estimate of the separate components, from this:
+  tv<-time_varying_PLUS_placebo_effect[,.(tp=timeptDiff,m=m*exop$fract_ExpPB_thats_TV,
+                                          sd=(.5*(sd^2)+exop$covar_pb_tv)^(.5))]
+  pb<-time_varying_PLUS_placebo_effect[,.(tp=timeptDiff,m=m*(1-exop$fract_ExpPB_thats_TV),
+                                          sd=(.5*(sd^2)+exop$covar_pb_tv)^(.5))]
+  br<-tep[,.(tp=timeptDiff,m=(m-mpb),sd=(abs(sd^2-sdpb^2)+2*exop$covar_br_pbtv)^(.5))]
+  # [UPDATE] fudged to deal with negatives...!!
+  # (remember, timepoints are: 0  7 11 15 weeks)
+  
+  # [UPDATE] Try to find a semi-systematic way to match to our data: (this is all totally hack-y) - try out some different parameters for the gompertz function, and see how it matches the (calculated) response components from our clinical trial data:
+  
+  # Format what we've estimated from the data to be the timecourse of each effect
+  t<-c(0,7,11,15) # the time points in our actual data set, that we're comparing to
+  bresp<-data.table(x=t,datasource="From data",y=c(0,cumulative(br[tp!="14"]$m))) # biologic resp
+  presp<-data.table(x=t,datasource="From data",y=c(0,cumulative(pb[tp!="14"]$m))) # placebo resp
+  tresp<-data.table(x=t,datasource="From data",y=c(0,cumulative(tv[tp!="14"]$m))) # time-varying resp
+  
+  # Hand adjusted fit for br
+  brgom<-modgompertz(t=t,maxr=1*max(bresp$y),disp=5,rate=.42) # grgom is the output of the model
+  brcompare<-rbind(bresp,data.table(x=t,datasource="Calculated",y=brgom))
+  #ggplot(data=brcompare,aes(x=x,y=y))+geom_point(aes(color=datasource))+xlab("weeks")+ylab("net decrease in total CAPS")
+  
+  # Hand adjusted fit for Pb
+  pbgom<-modgompertz(t=t,maxr=1*max(presp$y),disp=5,rate=.35)
+  pbcompare<-rbind(presp,data.table(x=t,datasource="Calculated",y=pbgom))
+  #ggplot(data=pbcompare,aes(x=x,y=y))+geom_point(aes(color=datasource),alpha=.5)+xlab("weeks")+ylab("net decrease in total CAPS")
+  
+  # Hand adjusted fit for tv
+  tvgom<-modgompertz(t=t,maxr=1*max(tresp$y),disp=5,rate=.35)
+  tvcompare<-rbind(tresp,data.table(x=t,datasource="Calculated",y=tvgom))
+  #ggplot(data=tvcompare,aes(x=x,y=y))+geom_point(aes(color=datasource),alpha=.5)+xlab("weeks")+ylab("net decrease in total CAPS")
+  
+  # Make a set of parameters to go forwards with - can be varied as time allows, but plausible match:
+  respparam<-data.table(cat=c("tv","pb","br"),
+                        max=c(max(tresp$y),max(presp$y),max(bresp$y)),
+                        disp=c(5,5,5),
+                        rate=c(.35,.35,.42),
+                        sd=c(10,10,8))
+  blparam<-data.table(cat=c("BL","bm"),m=c(bl$m,bm$m),sd=c(bl$sd,bm$sd))
+  return(list(respparam=respparam,blparam=blparam))
+}

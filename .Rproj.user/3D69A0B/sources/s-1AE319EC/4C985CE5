@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1592931895916.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "4C985CE5",
+    "lastKnownWriteTime" : 1582407494,
+    "last_content_update" : 1582407494,
+    "path" : "~/GitHub/pmsimstats/vignettes/Produce_Publication_Results_1_generate_data.Rmd",
+    "project_path" : "vignettes/Produce_Publication_Results_1_generate_data.Rmd",
+    "properties" : {
+        "cursorPosition" : "127,0",
+        "last_setup_crc32" : "1AE319ECbcb84d92",
+        "scrollLine" : "121"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

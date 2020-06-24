@@ -17,10 +17,14 @@ lme_analysis(trialdesign_set, dat, op)
     information if available?}
   \item{\code{op$t_random_slope=FALSE}}{  Binary: should the LME model use
     random slopes, as well as random intercepts, for participants?}
+  \item{\code{op$full_model_out=FALSE}}{  Binary: if false, will output model
+    parameters as a row of numeric values for simulation processing (most common);
+    if true, will output an array that allows you to examine the results of a single
+    analysis in more detail}
 }}
 }
 \value{
-Returns a one row data table with components:
+Generally returns a one row data table with components:
   \itemize{
     \item{\code{out$beta}}{  The coefficient corresponding to an interaction
       between biomarker and outcome}
@@ -28,6 +32,14 @@ Returns a one row data table with components:
     \item{\code{out$p}}{  p-value conveying the statistical significance of the coefficient}
     \item{\code{out$issingular}}{  Was the model fit flagged as singular?}
     \item{\code{out$warning}}{  Any warnings from \code{fitMsgs}}
+  }
+  However, if you have full_model_out set to TRUE, you will instead get an array with components:
+  \itemize{
+  \item{\code{form}}{  The model fit by lmer}
+  \item{\code{fit}}{  The output of lmer}
+  \item{\code{datamerged}}{  The data in the form it was provided to lmer}
+  \item{\code{stdout}}{  The standard one row data table that's usually returned when
+     full_mode_out is set to FALSE, with beta, betaSE, etc}
   }
 }
 \description{
@@ -39,5 +51,6 @@ trial. Most often called by \code{generateSimualtedResults}. See vignettes
 for additional information.
 }
 \examples{
-# See vignettes for examples of how to call from \link{generateSimualtedResults}
+# See vignettes 1 & 2 for examples of how to call from the function generateSimualtedResults.R
+# See vignette 3 for an example of how to apply lme_analysis to actual clincal trial results
 }

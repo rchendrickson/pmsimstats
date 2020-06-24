@@ -1,5 +1,6 @@
 ~%2FGitHub%2FNof1simstats%2FRunScript_GenerateFigures.R="376430ED"
 ~%2FGitHub%2FNof1simstats%2FRunScript_GenerateSimualtedData.R="6B95CB9D"
+~%2FGitHub%2FNof1simstats%2FdataBasedParameterSetup.R="A8298A2"
 ~%2FGitHub%2FScratch%2FWorkingScript.R="B791217C"
 ~%2FGitHub%2Fpmsimstats%2FDESCRIPTION="85060C2"
 ~%2FGitHub%2Fpmsimstats%2FNAMESPACE="F8C6FBC6"
@@ -18,5 +19,6 @@
 ~%2FGitHub%2Fpmsimstats%2Fvignettes%2FProduce_Publication_Results.Rmd="DD46269E"
 ~%2FGitHub%2Fpmsimstats%2Fvignettes%2FProduce_Publication_Results_1_generate_data.Rmd="7F29C18B"
 ~%2FGitHub%2Fpmsimstats%2Fvignettes%2FProduce_Publication_Results_2_Look_at_data.Rmd="AD0E58FF"
+~%2FGitHub%2Fpmsimstats%2Fvignettes%2FProduce_Publication_Results_3_apply_to_actual_clinical_trial_data.Rmd="87365F41"
 ~%2FGitHub%2Ftestpackage%2FR%2Fhello.R="2416F7D6"
 ~%2FGitHub%2Ftestpackage%2Fman%2Fhello.Rd="EDE2BE37"
