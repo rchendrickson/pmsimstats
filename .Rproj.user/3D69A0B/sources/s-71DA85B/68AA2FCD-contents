@@ -1,6 +1,7 @@
 # Scratch Script space for doing the development work on the package.
 
 #devtools::install_github("r-lib/devtools")
+#install_github("rchendrickson/pmsimstats")
 
 # # Get tools on board
 # library("devtools")

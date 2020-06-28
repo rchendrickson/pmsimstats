@@ -1,5 +1,72 @@
-"0","library(merTools)
+"0","library(pmsimstats)"
+"2","Loading required package: data.table
 "
+"2","Registered S3 method overwritten by 'data.table':
+  method           from
+  print.data.table     
+"
+"2","data.table 1.12.8 using 4 threads (see ?getDTthreads).  Latest news: r-datatable.com
+"
+"2","Loading required package: lme4
+"
+"2","Loading required package: Matrix
+"
+"2","Loading required package: lmerTest
+"
+"2","Registered S3 method overwritten by 'dplyr':
+  method           from
+  print.rowwise_df     
+"
+"2","
+Attaching package: ‘lmerTest’
+
+"
+"2","The following object is masked from ‘package:lme4’:
+
+    lmer
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    step
+
+"
+"2","Loading required package: corpcor
+"
+"2","Loading required package: ggplot2
+"
+"2","Loading required package: MASS
+"
+"2","Loading required package: svMisc
+"
+"2","
+Attaching package: ‘svMisc’
+
+"
+"2","The following object is masked from ‘package:utils’:
+
+    ?
+
+"
+"2","Loading required package: tictoc
+"
+"2","Loading required package: ggpubr
+"
+"2","Loading required package: magrittr
+"
+"2","Loading required package: gridExtra
+"
+"0","library(data.table)"
+"0","library(lme4)"
+"0","library(lmerTest)"
+"0","library(corpcor)"
+"0","library(ggplot2)"
+"0","library(MASS)"
+"0","library(svMisc)"
+"0","library(tictoc)"
+"0","library(ggpubr)"
+"0","library(gridExtra)"
+"0","library(merTools)"
 "2","Loading required package: arm
 "
 "2","
@@ -23,4 +90,10 @@ arm (Version 1.10-1, built: 2018-4-12)
   tidy.rjags     broom
   tidy.stanfit   broom
   tidy.stanreg   broom
+"
+"2","Registered S3 methods overwritten by 'htmltools':
+  method               from         
+  print.html           tools:rstudio
+  print.shiny.tag      tools:rstudio
+  print.shiny.tag.list tools:rstudio
 "

@@ -5,15 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "4066314604",
+    "hash" : "0",
     "id" : "68AA2FCD",
-    "lastKnownWriteTime" : 1592977216,
-    "last_content_update" : 1592977216996,
+    "lastKnownWriteTime" : 1593316584,
+    "last_content_update" : 1593316584451,
     "path" : "~/GitHub/pmsimstats/R/scratch_WorkingScript.R",
     "project_path" : "R/scratch_WorkingScript.R",
     "properties" : {
-        "cursorPosition" : "124,32",
-        "scrollLine" : "107"
+        "cursorPosition" : "3,1",
+        "scrollLine" : "0"
     },
     "read_only" : false,
     "read_only_alternatives" : [

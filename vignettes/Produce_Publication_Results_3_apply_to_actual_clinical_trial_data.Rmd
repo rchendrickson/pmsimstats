@@ -76,6 +76,7 @@ analysisparams<-expand.grid(useDE=FALSE,t_random_slope=FALSE,full_model_out=TRUE
 ## Load in the clinical trial results
 
 We are loading in some preformated reults extracted from an existing data set. They need to be a data table, with names that match those used by the rest of the package:
+
 * *bm* is the name of the biomarker  
 * *BL* is the name for the output variable at baseline
 * *ptID* has to be numeric and sequential
@@ -85,7 +86,7 @@ We are loading in some preformated reults extracted from an existing data set. T
 Here, our clinical trials data is from a parallel group RCT, with path 1 representing the prazosin group and path 2 representing the placebo group:
 
 ```{r}
-data(CTdata)
+load(file = "../data/CTdata.rda")
 CTdata
 ```
 
@@ -96,6 +97,8 @@ We'll include the code to run the analysis on the data both including all the pa
 ```{r}
 lme_analysis.outPG<-lme_analysis(trialdesigns$PG$trialpaths,CTdata,op=analysisparams)
 lme_analysis.outOL<-lme_analysis(trialdesigns$OL$trialpaths,CTdata[path==1],op=analysisparams)
+lme_analysis.outPG
+lme_analysis.outOL
 ```
 
 ## Use these results to predict how a new patient with a particular biomarker value is likely to respond to treatment
@@ -128,6 +131,7 @@ ggplot(data=dt_wide)+
   ylab("Change in total PTSD symptom intensity over 15 weeks")
 
 ```
+
 
 
 
