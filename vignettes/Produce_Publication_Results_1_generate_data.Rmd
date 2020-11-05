@@ -326,7 +326,7 @@ abbrevmodelparams<-expand.grid(
   c.tv=.8,c.pb=.8,c.br=.8,
   c.cf1t=.2,c.cfct=.1
 )
-xabbrevmodelparams2<-expand.grid(
+xabbrevmodelparams<-expand.grid(
   N=c(35),
   c.bm=c(.6), 
   carryover_t1half=c(0),
@@ -347,7 +347,7 @@ There are also parameters used to set strictly analysis variables; these should 
 
 ```{r}
 # Parameters on the analysis side
-analysisparams<-expand.grid(useDE=FALSE,t_random_slope=FALSE)
+analysisparams<-expand.grid(useDE=FALSE,t_random_slope=FALSE,full_model_out=FALSE)
 ```
 
 And, finally, you're ready to generate the simtulated data! Be warned that this is computationally intense for a light little laptop like I'm using - so in the vignette text, there's a flag that keeps this code from running, and the Nrep is also set low. In the publication, all parameter spaces were repeated 1,000 times.  
