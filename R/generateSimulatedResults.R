@@ -68,7 +68,9 @@ generateSimulatedResults<-function(trialdesigns,respparamsets,blparamsets,
                                    rawdataout=FALSE){
 
   # defaults
-  if(missing(analysisparams)) analysisparams<-list(useDE=TRUE,randomslopes=FALSE)
+  if(missing(analysisparams)) analysisparams<-list(useDE=TRUE,
+                                                   t_random_slope=FALSE,
+                                                   full_model_out=FALSE)
 
   # Hold original directory in case we change it
   initialdirectory<-getwd()
