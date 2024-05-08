@@ -131,7 +131,7 @@ generateData<-function(modelparam,respparam,blparam,trialdesign,empirical,makePo
         n1<-paste(trialdesign$timeptname[p],c,sep=".")
         n2<-paste(trialdesign$timeptname[p],c2,sep=".")
         correlations[n1,n2]<-modelparam$c.cf1t
-        correlations[n1,n2]<-modelparam$c.cf1t
+        correlations[n2, n1] <- modelparam$c.cf1t  ##### <--------FIXING TYPO, this was [n1,n2] again
       }
       for(p in 1:(nP-1)){
         for(p2 in (1+p):nP){
