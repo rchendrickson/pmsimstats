@@ -48,9 +48,18 @@ lme_analysis<-function(trialdesign_set,dat,op){
     op$useDE<-TRUE
     op$t_random_slope<-FALSE
     op$full_model_out<-FALSE
+    op$carryover_t1half <- 0
     op$simplecarryover <- FALSE
+    op$carryover_scalefactor=1
   }else if(!("simplecarryover"%in%names(op))){
     op$simplecarryover=FALSE
+  }
+  if(!("carryover_t1half"%in%names(op))){
+    op$carryover_t1half=0
+    op$carryover_scalefactor=1
+  }
+  if((op$carryover_t1half>0)&(op$simplecarryover==TRUE)){
+    error("Don't know what it means to have two different carryover models, so disallowing simplecarryover and a half-life based carryover at the same time for now.")
   }
 
   n_groups<-length(trialdesign_set)
@@ -87,6 +96,13 @@ lme_analysis<-function(trialdesign_set,dat,op){
     data.m2<-merge(data.m1,
                    trialdesign[,.(timeptnames,t,De=e,Db=(tod>0),tsd)],
                    by="timeptnames",all=TRUE)
+
+    # Add a scaler version of Db - Dbc, for continuous - to allow for
+    # more complex carryover modeling
+    data.m2[,Dbc:=as.numeric(NA)]
+    data.m2[Db==TRUE,Dbc:=1]
+    data.m2[Db==FALSE,Dbc:=((1/2)^(op*carryover_scalefactor*tsd/op$carryover_t1half))]
+
     datout[[g]]<-data.m2
   }
 
@@ -111,7 +127,7 @@ lme_analysis<-function(trialdesign_set,dat,op){
   # Use these to pick a model
   modelbase="Sx~bm+t"
   if(varInDb){
-    modelbase=paste0(modelbase,"+Db+bm*Db")
+    modelbase=paste0(modelbase,"+Dbc+bm*Dbc")
   }else{
     modelbase=paste0(modelbase,"+bm*t")
   }
@@ -174,9 +190,9 @@ lme_analysis<-function(trialdesign_set,dat,op){
   # Package output
   c<-summary(fit)$coefficients
   if(varInDb){
-    p<-c['bm:DbTRUE','Pr(>|t|)']
-    beta<-c['bm:DbTRUE','Estimate']
-    betaSE<-c['bm:DbTRUE','Std. Error']
+    p<-c['bm:DbcTRUE','Pr(>|t|)']
+    beta<-c['bm:DbcTRUE','Estimate']
+    betaSE<-c['bm:DbcTRUE','Std. Error']
   }else{
     p<-c['bm:t','Pr(>|t|)']
     beta<-c['bm:t','Estimate']
