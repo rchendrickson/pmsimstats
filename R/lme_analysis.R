@@ -18,6 +18,11 @@
 #'       parameters as a row of numeric values for simulation processing (most common);
 #'       if true, will output an array that allows you to examine the results of a single
 #'       analysis in more detail}
+#'     \item{\code{op$simplecarryover=FALSE}}{  Binary: if true will add "time since
+#'       drug" as a free parameter in the model}
+#'     \item{\code{op$carryover_t1half=0}}{  If non-zero, will build in an exponential
+#'       falloff in the "on drug or not" term in the analysis (Db), using this as the
+#'       half-life.}
 #'   }
 #' @return Generally returns a one row data table with components:
 #'   \itemize{
