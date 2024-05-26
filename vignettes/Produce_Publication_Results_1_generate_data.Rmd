@@ -293,7 +293,7 @@ This generated `respparamsets`, where the rates were varied, and `respparamsetsm
 
 ### Censoring parameters
 
-The censoring parameters are used to create versions of the simulated data where various droppout patterns are simulated. See \link{censordata} for details of how this is implemented and what the parameteres do. 
+The censoring parameters are used to create versions of the simulated data where various droppout patterns are simulated. See \link{censordata} for details of how this is implemented and what the parameters do. 
 
 The censoring parameters are much simpler than the response parameters, with only two main parameters (beta0 and beta1), and a third parameter (eb1) that controls the shape of the biased dropout curve, but doesn't have a strong effect and was not varied for the publication. The parameter combinations to test are simply combined into a single data table, along with a brief name that can remind you what they represent (and is used in plots):
 
@@ -307,9 +307,9 @@ censorparams<-data.table(
 ```
 ### Model parameters
 
-This set of parameters includes things that it's easy / reasonable to vary as individual parameteres. Only some of them were varied in the manuscript: N, c.bm, and carryover_t1half. The others were played with, but it didn't make it in the paper. See `?generateData` for information on each of the parameters.
+This set of parameters includes things that it's easy / reasonable to vary as individual parameters. Only some of them were varied in the manuscript: N, c.bm, and carryover_t1half. The others were played with, but it didn't make it in the paper. See `?generateData` for information on each of the parameters.
 
-Here we made a few different sets of the model parameteres, for different purposes. One to test the impact of these core parameters on power (`coremodelparams`), one to run an abbreviated set when testing the impact of varying the response parameters,  a third to redo this with even lower N and biomarker effect so that we could see the impact of varying the rate parameters without half the cells capping out at 1, and a final one to get raw data output to plot the trajectories: 
+Here we made a few different sets of the model parameters, for different purposes. One to test the impact of these core parameters on power (`coremodelparams`), one to run an abbreviated set when testing the impact of varying the response parameters,  a third to redo this with even lower N and biomarker effect so that we could see the impact of varying the rate parameters without half the cells capping out at 1, and a final one to get raw data output to plot the trajectories: 
 
 ```{r}
 coremodelparams<-expand.grid(
@@ -350,10 +350,10 @@ There are also parameters used to set strictly analysis variables; these should 
 analysisparams<-expand.grid(useDE=FALSE,t_random_slope=FALSE,full_model_out=FALSE)
 ```
 
-And, finally, you're ready to generate the simtulated data! Be warned that this is computationally intense for a light little laptop like I'm using - so in the vignette text, there's a flag that keeps this code from running, and the Nrep is also set low. In the publication, all parameter spaces were repeated 1,000 times.  
+And, finally, you're ready to generate the simulated data! Be warned that this is computationally intense for a light little laptop like I'm using - so in the vignette text, there's a flag that keeps this code from running, and the Nrep is also set low. In the publication, all parameter spaces were repeated 1,000 times.  
 
 There are only a few settings left that aren't explained above - see `?generateData` and the wrapper function `?generateSimulatedResuls` for explanations of how they work. If you need to run smaller
-numers of repititions and then rejoin them you can do so, as long as they have the exact same parameter space, using \link{reknitsimresults}.
+numbers of repetitions and then rejoin them you can do so, as long as they have the exact same parameter space, using \link{reknitsimresults}.
 
 ```{r}
 # Set the number of reptitions. Was 1,000 in the publication

@@ -83,7 +83,7 @@ PlotModelingResults<-function(data,param2plot,param2vary,param2hold,param2nothol
   otherholds<-setdiff(names(d),
                       c(param2hold,param2vary,param2nothold,"modelparamset",
                         "frac_NA","beta","betaSE","p","tID","irep","ETbeta","ETbetaSE",
-                        "issingular"))
+                        "issingular","warning"))
   for(iP in 1:length(param2hold)){
     n<-names(param2hold)[iP]
     d<-d[get(n)==param2hold[[n]]]

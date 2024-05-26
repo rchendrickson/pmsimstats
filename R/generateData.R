@@ -40,6 +40,8 @@
 #'   (Usually yes, although you may want to turn this off at times to test the impact of
 #'   this step on your covariance sturcture)
 #' @param seed Randomization seed (defaults to NA)
+#' @param scalefactor TODO update when understand what this does?
+#' @param verbose Set to \code{TRUE} if you want chatty outputs; defaults to \code{FALSE}
 #' @returns A \code{dat} file that contains both the total symptom scores at each timepoint
 #'   and also all the individual factors that were used to generate those total scores
 #' @examples
@@ -47,7 +49,7 @@
 #' @export
 
 
-generateData<-function(modelparam,respparam,blparam,trialdesign,empirical,makePositiveDefinite,seed=NA){
+generateData<-function(modelparam,respparam,blparam,trialdesign,empirical,makePositiveDefinite,seed=NA,scalefactor=2,verbose=FALSE){
 
   # I. Turn the trial design information into something easier to use
   d<-data.table(trialdesign)
@@ -81,11 +83,17 @@ generateData<-function(modelparam,respparam,blparam,trialdesign,empirical,makePo
     }
     if(c=="br"){
       brmeans<-modgompertz(d$tod,rp$max,rp$disp,rp$rate)
+      ## Code added in by Ron Thomas:
+      brtest <- brmeans == 0
+      rawbrmeans <- brmeans
+      names(brtest) <- labels[19:26]
+      names(rawbrmeans) <- labels[19:26]
+      ## End new code
       if(nP>1){
         for(p in 2:nP){
           if(!d[p]$onDrug){
             if(d[p]$tsd>0){
-              brmeans[p]<-brmeans[p]+brmeans[p-1]*(1/2)^(d$tsd[p]/modelparam$carryover_t1half)
+              brmeans[p]<-brmeans[p]+brmeans[p-1]*(1/2)^(scalefactor * d$tsd[p]/modelparam$carryover_t1half)
             }
           }
         }
@@ -98,6 +106,12 @@ generateData<-function(modelparam,respparam,blparam,trialdesign,empirical,makePo
   correlations<-diag(length(labels))
   rownames(correlations)<-labels
   colnames(correlations)<-labels
+  # Give some output if in verbose mode:
+  if(verbose==TRUE){
+    aa <- data.frame(modelparam$carryover_t1half, rawbrmeans, brmeans, diff = brmeans - rawbrmeans)
+    cat("brmeans before and after adj:\n ")
+    print(aa)
+  }
   for(c in cl){
     # build in the autocorrlations across time
     if(nP>1){
@@ -117,7 +131,7 @@ generateData<-function(modelparam,respparam,blparam,trialdesign,empirical,makePo
         n1<-paste(trialdesign$timeptname[p],c,sep=".")
         n2<-paste(trialdesign$timeptname[p],c2,sep=".")
         correlations[n1,n2]<-modelparam$c.cf1t
-        correlations[n1,n2]<-modelparam$c.cf1t
+        correlations[n2,n1] <- modelparam$c.cf1t  ##### <--------FIXING TYPO, this was [n1,n2] again
       }
       for(p in 1:(nP-1)){
         for(p2 in (1+p):nP){
@@ -131,11 +145,28 @@ generateData<-function(modelparam,respparam,blparam,trialdesign,empirical,makePo
     # correlation with biomarker
     for(p in 1:nP){
       n1<-paste(trialdesign$timeptname[p],"br",sep=".")
-      if(means[which(n1==labels)]!=0){
-        correlations[n1,'bm']<-modelparam$c.bm
-        correlations['bm',n1]<-modelparam$c.bm
+      ## RON THOMAS VERSION:
+      if (p > 1) {
+        n0 <- paste(trialdesign$timeptname[p - 1], "br", sep = ".")
+        mm1 <- means[which(n1 == labels)]
+        mm0 <- means[which(n0 == labels)]
+        correlations["bm", n1] <- correlations[n1, "bm"] <- ifelse(brtest[p], ifelse(brmeans[p] == 0, 0, (mm1 / mm0) * modelparam$c.bm), modelparam$c.bm)
       }
+      ##
+      ## Following commented out in Ron Thomas version:
+      #if(means[which(n1==labels)]!=0){
+      #  correlations[n1,'bm']<-modelparam$c.bm
+      #  correlations['bm',n1]<-modelparam$c.bm
+      #}
+      ## End commented out by Ron
     }
+  }
+  # Again, some output if in verbose mode:
+  if(verbose==TRUE){
+    cat("carryover: ")
+    print(modelparam$carryover_t1half)
+    cat("br correlations: \n")
+    print(correlations[19:26, 1])
   }
   # Turn correlation matrix into covariance matrix
   sigma<-outer(sds,sds)*correlations
