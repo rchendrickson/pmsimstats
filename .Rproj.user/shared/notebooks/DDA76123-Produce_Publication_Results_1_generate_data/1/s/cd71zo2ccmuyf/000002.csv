@@ -1,6 +1,0 @@
-"0","censorparams<-data.table("
-"0","  names=c(""balanced"",""more of flat"",""more of biased"",""high dropout""),"
-"0","  beta0=c(.05,.05 ,.05,.15),"
-"0","  beta1=c(.5,.2,.8 ,.5),"
-"0","  eb1=  c(2,  2  ,2  ,2 )"
-"0",")"

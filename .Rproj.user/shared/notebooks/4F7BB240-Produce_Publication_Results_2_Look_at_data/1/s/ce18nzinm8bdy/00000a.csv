@@ -1,4 +1,0 @@
-"0","#ml <- arrangeGrob(grobs = plots, layout_matrix = lay)"
-"0","#setwd(sourcedir)"
-"0","#ggsave(""Fig3_factortrajectories.pdf"",ml,width=9,height=5,units=""in"",dp=600)"
-"0",""

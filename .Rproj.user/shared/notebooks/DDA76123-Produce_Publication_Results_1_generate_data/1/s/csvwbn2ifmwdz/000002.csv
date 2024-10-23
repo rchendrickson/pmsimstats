@@ -1,4 +1,0 @@
-"0","# 1) ridiculous way to make it a data table
-TRlongform<-as.data.table(melt(TRrespparam$param))
-"
-"2","id.vars and measure.vars are internally guessed when both are 'NULL'. All non-numeric/integer/logical type columns are considered id.vars, which in this case are columns [cat]. Consider providing at least one of 'id' or 'measure' vars in future."
