@@ -358,13 +358,13 @@ numbers of repetitions and then rejoin them you can do so, as long as they have 
 ```{r}
 # Set the number of reptitions. Was 1,000 in the publication
 Nreps<-2
-
 # Flag to keep this code from actually running for now - flip to try it
-rerun_simulations<-FALSE
+rerun_simulations<-TRUE
 
 if(rerun_simulations){
   # This block runs the paramater sets that explore the impact of N, biomarker effect size, 
   # and carryover
+  browser()
   simresults<-generateSimulatedResults(
     trialdesigns=list(trialdesigns$OL,trialdesigns$OLBDC,trialdesigns$CO,trialdesigns$Nof1),
     respparamsets=origrespparamsets[1],
