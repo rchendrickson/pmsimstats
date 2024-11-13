@@ -106,7 +106,7 @@ lme_analysis<-function(trialdesign_set,dat,op){
     # more complex carryover modeling
     data.m2[,Dbc:=as.numeric(NA)]
     data.m2[Db==TRUE,Dbc:=1]
-    data.m2[Db==FALSE,Dbc:=((1/2)^(op*carryover_scalefactor*tsd/op$carryover_t1half))]
+    data.m2[Db==FALSE,Dbc:=((1/2)^(op$carryover_scalefactor*tsd/op$carryover_t1half))]
 
     datout[[g]]<-data.m2
   }
