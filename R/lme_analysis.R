@@ -195,9 +195,9 @@ lme_analysis<-function(trialdesign_set,dat,op){
   # Package output
   c<-summary(fit)$coefficients
   if(varInDb){
-    p<-c['bm:DbcTRUE','Pr(>|t|)']
-    beta<-c['bm:DbcTRUE','Estimate']
-    betaSE<-c['bm:DbcTRUE','Std. Error']
+    p<-c['bm:Dbc','Pr(>|t|)']
+    beta<-c['bm:Dbc','Estimate']
+    betaSE<-c['bm:Dbc','Std. Error']
   }else{
     p<-c['bm:t','Pr(>|t|)']
     beta<-c['bm:t','Estimate']
